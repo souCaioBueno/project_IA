@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Chatbot Jurídico</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #f0f2f5; height: 100vh; display: flex; justify-content: center; align-items: center; }
+
+    /* Chat container */
+    #chat-container {
+      width: 70%;          /* maior largura */
+      max-width: 1200px;
+      height: 80%;         /* maior altura */
+      display: flex;
+      flex-direction: column;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+    #messages {
+      flex-grow: 1;
+      padding: 20px;
+      overflow-y: auto;
+      background: #f9f9f9;
+      border-bottom: 1px solid #ddd;
+    }
+    .message {
+      max-width: 70%;
+      margin-bottom: 12px;
+      padding: 14px 18px;
+      border-radius: 16px;
+      font-size: 16px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      animation: fadeIn 0.3s ease-in-out;
+    }
+    .user-message { background: #007bff; color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
+    .bot-message { background: #e0e0e0; color: #222; align-self: flex-start; border-bottom-left-radius: 4px; }
+
+    /* Input area */
+    #input-area {
+      display: flex;
+      align-items: center;
+      padding: 14px;
+      background: #f1f1f1;
+    }
+    #input-text { flex: 1; border: 1px solid #ccc; border-radius: 25px; padding: 12px 16px; font-size: 16px; outline: none; margin-right: 12px; }
+    button, .icon-btn {
+      background: #007bff;
+      border: none;
+      color: white;
+      font-weight: bold;
+      padding: 12px 16px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: background 0.3s ease;
+    }
+    button:hover, .icon-btn:hover { background: #0056b3; }
+    .icon-btn { width: 44px; height: 44px; margin-left: 8px; }
+    input[type="file"] { display: none; }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body>
+
+  <div id="chat-container">
+    <div id="messages"></div>
+    <div id="input-area">
+      <input id="input-text" type="text" placeholder="Digite sua pergunta ou cole link do YouTube..." />
+      <button id="send-btn">➤</button>
+      <label for="pdf-input" class="icon-btn" title="Enviar PDF">📄</label>
+      <input id="pdf-input" type="file" accept="application/pdf" />
+    </div>
+  </div>
+
+<script>
+const messagesDiv = document.getElementById('messages');
+const inputText = document.getElementById('input-text');
+const sendBtn = document.getElementById('send-btn');
+const pdfInput = document.getElementById('pdf-input');
+
+function addMessage(text, fromUser = true) {
+  const msgDiv = document.createElement('div');
+  msgDiv.classList.add('message', fromUser ? 'user-message' : 'bot-message');
+  msgDiv.textContent = text;
+  messagesDiv.appendChild(msgDiv);
+  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
+async function enviarPergunta() {
+  const texto = inputText.value.trim();
+  if (!texto) return;
+
+  addMessage(texto, true);
+  inputText.value = '';
+  const typingMsg = showTyping();
+
+  try {
+    let endpoint = 'http://127.0.0.1:8000/perguntar';
+    let bodyData = { texto };
+
+    if (/https?:\/\/(www\.)?youtube\.com\/watch\?v=/.test(texto)) {
+      endpoint = 'http://127.0.0.1:8000/resumir_video';
+      bodyData = { link: texto };
+    }
+
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(bodyData)
+    });
+
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const data = await res.json();
+    typingMsg.remove();
+    addMessage(data.resposta || data.resumo || data.erro || "Sem resposta da API.", false);
+  } catch (err) {
+    typingMsg.remove();
+    addMessage("Erro: " + err.message, false);
+  }
+}
+
+pdfInput.addEventListener('change', async () => {
+  const file = pdfInput.files[0];
+  if (!file) return;
+  addMessage(`Enviando PDF: ${file.name}`, true);
+  const typingMsg = showTyping();
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  try {
+    const res = await fetch('http://127.0.0.1:8000/resumir_pdf', {
+      method: 'POST',
+      body: formData
+    });
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const data = await res.json();
+    typingMsg.remove();
+    addMessage(data.resumo || data.erro || "Erro ao processar PDF.", false);
+  } catch (err) {
+    typingMsg.remove();
+    addMessage("Erro: " + err.message, false);
+  }
+});
+
+function showTyping() {
+  const typingMsg = document.createElement('div');
+  typingMsg.classList.add('message', 'bot-message');
+  typingMsg.textContent = 'Digitando...';
+  messagesDiv.appendChild(typingMsg);
+  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  return typingMsg;
+}
+
+sendBtn.addEventListener('click', enviarPergunta);
+inputText.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    enviarPergunta();
+  }
+});
+</script>
+
+</body>
+</html>
