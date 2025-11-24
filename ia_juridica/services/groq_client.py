@@ -2,7 +2,7 @@ import logging
 from groq import Groq
 
 
-GROQ_API_KEY = "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"
+GROQ_API_KEY = "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"
 
 client = Groq(api_key=GROQ_API_KEY)
 
@@ -73,3 +73,4 @@ def gerar_resposta_generica_groq(texto: str) -> str:
     Função genérica para pedir à IA que se apresente ou responda perguntas jurídicas.
     """
     return gerar_resumo_groq(texto, tipo="resposta teste")
+
