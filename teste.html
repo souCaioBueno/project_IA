@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot Jurídico</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- Botão para abrir sidebar -->
+<button id="open-sidebar" class="floating-btn">☰</button>
+
+<!-- SIDEBAR -->
+<aside id="sidebar" class="closed">
+    <h2>⚙ Legisla.IA</h2>
+
+    <button onclick="novaConversa()">📝 Nova conversa</button>
+    
+    <button onclick="alert('Configurações em breve!')">⚙ Configurações</button>
+
+    <a href="https://seusite.com">⬅ Voltar ao site</a>
+
+    <button id="close-sidebar" class="close-btn">✖</button>
+</aside>
+
+<!-- CHAT CONTAINER -->
+<div id="chat-container">
+    <div id="messages"></div>
+
+    <div id="input-area">
+        <input id="input-text" type="text" placeholder="Digite sua pergunta...">
+        <button id="send-btn">➤</button>
+
+        <label for="pdf-input" class="icon-btn">📄</label>
+        <input id="pdf-input" type="file" accept="application/pdf">
+    </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
+
+
+
